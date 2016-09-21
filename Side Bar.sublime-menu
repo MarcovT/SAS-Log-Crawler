@@ -1,0 +1,22 @@
+[
+  {
+    "caption": "-",
+    "id": "side-bar-start-separator"
+  },
+  {
+    "caption": "Check SAS Log",
+    "id": "side-bar-check-log",
+    "command": "side_bar_check_log",
+    "args": {
+      "paths": []
+    }
+  },
+  {
+    "caption": "Check SAS Logs in Folder",
+    "id": "side-bar-check-folder-logs",
+    "command": "side_bar_check_folder_logs",
+    "args": {
+      "paths": []
+    }
+  }
+]
