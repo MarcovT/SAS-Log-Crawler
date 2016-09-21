@@ -1,0 +1,33 @@
+[
+  {
+    "caption": "Preferences",
+    "mnemonic": "n",
+    "id": "preferences",
+    "children":
+    [
+      // DOES NOT WORK YET
+       {
+          "caption": "Package Settings",
+          "mnemonic": "P",
+          "id": "package-settings",
+          "children":
+          [
+              {
+                  "caption": "SAS Log Crawler",
+                  "children":
+                  [
+                      {
+                          "command": "open_file", "args":
+                          {
+                              "file": "${packages}/User/SAS_Log_Crawler.sublime-settings"
+                          },
+                          "caption": "Settings – User"
+                      },
+                      { "caption": "-" }
+                  ]
+              }
+          ]
+      }
+    ]
+  }
+]
