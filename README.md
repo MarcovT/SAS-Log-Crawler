@@ -1,5 +1,5 @@
 #Description
-Simple plugin to find errors, warning and general messages in the log of a SAS program that you usually would not want.
+Simple plugin to find errors, warnings and general messages in the log of a SAS program that you usually would not want.
 This is still being developed and it won't work yet.
 
 #Installation
