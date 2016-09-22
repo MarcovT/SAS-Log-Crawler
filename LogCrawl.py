@@ -1,12 +1,15 @@
 import sublime
 import sublime_plugin
 import re
+import os
+import threading
 
 default_pattern = "missing val|repeats of BY values|uninitialized|[^l]remerge|Invalid data for"
 
 ignore_pattern = "Unable to copy SASUSER registry|the BASE SAS Software product with which|your system is scheduled|will be expiring soon, and|this upcoming expiration.|information on your warning period.|Unable to open SASUSER.PROFILE|All profile changes will be lost|Copyright (c)|This session is executing|The Base Product product"
 
 default_lst_pattern = "The COMPARE Procedure|No unequal values|not found in"
+
 
 def getSettingsRegex(extension):
     if extension == "log" or extension == "lst":
@@ -55,6 +58,10 @@ def getExtension(theView):
     return ext[0]
 
 
+def getPath(paths=[]):
+    return paths[0]
+
+
 class log_crawl(sublime_plugin.TextCommand):
     def run(self, edit):
         ext = getExtension(self.view)
@@ -67,16 +74,30 @@ class log_crawl(sublime_plugin.TextCommand):
 
 # Still need TODO:
 class side_bar_check_log(sublime_plugin.TextCommand):
-    def run(self, paths=[]):
-        # Get pattern from settings or use default
-        err_regx = getSettingsRegex()
-        # Go to next error
-        goToNextError(self.view, err_regx)
+    def run(self, view, files=[]):
+        file = getPath(files)
+        print("File is " + str(file))
+        if file:
+            # Open the file that was selected with the cursur
+            window = self.view.window()
+            view = window.open_file(os.path.realpath(file))
+
+            while view.is_loading():
+                time.sleep(0.3)
+
+            ext = getExtension(self.view)
+            # print(ext)
+            # Get pattern from settings or use default
+            err_regx = getSettingsRegex(ext)
+            # Go to next error
+            goToNextError(self.view, err_regx)
+        else:
+            sublime.status_message("No file selected.")
 
 
 # Still need TODO:
 class side_bar_check_folder_logs(sublime_plugin.TextCommand):
-    def run(self, paths=[]):
+    def run(self, view, files=[]):
         # Get pattern from settings or use default
         err_regx = getSettingsRegex()
         # Go to next error

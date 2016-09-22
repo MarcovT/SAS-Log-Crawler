@@ -8,7 +8,7 @@
         "id": "side-bar-check-log",
         "command": "side_bar_check_log",
         "args": {
-            "paths": []
+            "files": []
         }
     },
     {
@@ -16,7 +16,7 @@
         "id": "side-bar-check-folder-logs",
         "command": "side_bar_check_folder_logs",
         "args": {
-            "paths": []
+            "files": []
         }
     }
 ]
