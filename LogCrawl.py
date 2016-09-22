@@ -2,20 +2,26 @@ import sublime
 import sublime_plugin
 import re
 
+default_pattern = "missing val|repeats of BY values|uninitialized|[^l]remerge|Invalid data for"
+
+ignore_pattern = "Unable to copy SASUSER registry|the BASE SAS Software product with which|your system is scheduled|will be expiring soon, and|this upcoming expiration.|information on your warning period.|Unable to open SASUSER.PROFILE|All profile changes will be lost|Copyright (c)|This session is executing|The Base Product product"
+
+default_lst_pattern = "The COMPARE Procedure|No unequal values|not found in"
 
 def getSettingsRegex(extension):
     if extension == "log" or extension == "lst":
         s = sublime.load_settings('SAS_Log_Crawler.sublime-settings')
 
         if extension == "log":
-            err_regx = s.get('err-regx', "(^(error|warning:)|missing val|repeats of BY values|uninitialized|[^l]remerge|Invalid data for)(?! (Unable to copy SASUSER registry|the .{4,15} product with which|your system is scheduled|will be expiring soon, and|this upcoming expiration.|information on your warning period.))")
-            s.set('err-regx', err_regx)
+            def_regx = s.get('err-regx', default_pattern)
+            ign_regx = s.get('ign-regx', ignore_pattern)
+            regex = "(^(error|warning:)|" + default_pattern + ")(?! (" + ignore_pattern + "))"
         elif extension == "lst":
-            err_regx = s.get('lst-regx', "(The COMPARE Procedure|No unequal values|not found in)")
-            s.set('lst-regx', err_regx)
+            def_regx = s.get('lst-regx', default_pattern)
+            s.set('lst-regx', def_regx)
+            regex = "(" + default_pattern + ")"
 
-        sublime.save_settings('SAS_Log_Crawler.sublime-settings')
-        return err_regx
+        return regex
     else:
         return False
 
