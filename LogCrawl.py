@@ -11,6 +11,14 @@ ignore_pattern = "Unable to copy SASUSER registry|the BASE SAS Software product 
 default_lst_pattern = "The COMPARE Procedure|No unequal values|not found in"
 
 
+def check_log(view):
+    ext = getExtension(view)
+    # print(ext)
+    # Get pattern from settings or use default
+    err_regx = getSettingsRegex(ext)
+    # Go to next error
+    goToNextError(view, err_regx)
+
 def getSettingsRegex(extension):
     if extension == "log" or extension == "lst":
         s = sublime.load_settings('SAS_Log_Crawler.sublime-settings')
@@ -62,35 +70,30 @@ def getPath(paths=[]):
     return paths[0]
 
 
+def check_if_can_call(view):
+    if view.is_loading():
+        sublime.set_timeout_async(check_if_can_call, 0.1)
+    else:
+        check_log(view)
+    check_if_can_call(view)
+
+
 class log_crawl(sublime_plugin.TextCommand):
     def run(self, edit):
-        ext = getExtension(self.view)
-        # print(ext)
-        # Get pattern from settings or use default
-        err_regx = getSettingsRegex(ext)
-        # Go to next error
-        goToNextError(self.view, err_regx)
+        check_log(self.view)
 
 
 # Still need TODO:
 class side_bar_check_log(sublime_plugin.TextCommand):
+
     def run(self, view, files=[]):
         file = getPath(files)
-        print("File is " + str(file))
+        #print("File is " + str(file))
         if file:
             # Open the file that was selected with the cursur
             window = self.view.window()
             view = window.open_file(os.path.realpath(file))
-
-            while view.is_loading():
-                time.sleep(0.3)
-
-            ext = getExtension(self.view)
-            # print(ext)
-            # Get pattern from settings or use default
-            err_regx = getSettingsRegex(ext)
-            # Go to next error
-            goToNextError(self.view, err_regx)
+            check_if_can_call(view)
         else:
             sublime.status_message("No file selected.")
 
