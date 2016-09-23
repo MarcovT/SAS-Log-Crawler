@@ -2,7 +2,6 @@ import sublime
 import sublime_plugin
 import re
 import os
-import threading
 
 default_pattern = "missing val|repeats of BY values|uninitialized|[^l]remerge|Invalid data for"
 
@@ -11,19 +10,11 @@ ignore_pattern = "Unable to copy SASUSER registry|the BASE SAS Software product 
 default_lst_pattern = "The COMPARE Procedure|No unequal values|not found in"
 
 
-def check_log(view):
-    ext = getExtension(view)
-    # print(ext)
-    # Get pattern from settings or use default
-    err_regx = getSettingsRegex(ext)
-    # Go to next error
-    goToNextError(view, err_regx)
-
 def getSettingsRegex(extension):
-    if extension == "log" or extension == "lst":
+    if extension == ".log" or extension == ".lst":
         s = sublime.load_settings('SAS_Log_Crawler.sublime-settings')
 
-        if extension == "log":
+        if extension == ".log":
             def_regx = s.get('err-regx', default_pattern)
             ign_regx = s.get('ign-regx', ignore_pattern)
             regex = "(^(error|warning:)|" + default_pattern + ")(?! (" + ignore_pattern + "))"
@@ -37,7 +28,7 @@ def getSettingsRegex(extension):
         return False
 
 
-def goToNextError(theView, err_regx):
+def goToNextErrorView(theView, err_regx):
     if err_regx:
         # Get end of last cursur position
         curr_pos = 0
@@ -58,12 +49,9 @@ def goToNextError(theView, err_regx):
         sublime.status_message("This is not a .log or .lst file")
 
 
-def getExtension(theView):
-    path = theView.file_name().split("\\")[-1:]
-    # print(path)
-    ext = path[0].split(".")[-1:]
-    # print(ext[0])
-    return ext[0]
+def getExtension(filename):
+    path = os.path.splitext(filename)[1]
+    return path
 
 
 def getPath(paths=[]):
@@ -71,11 +59,23 @@ def getPath(paths=[]):
 
 
 def check_if_can_call(view):
+    # Set small asyncronous timeout while view is loading
     if view.is_loading():
         sublime.set_timeout_async(check_if_can_call, 0.1)
     else:
+        # When view is done loading call the log check function to jump to first issue if any is found
         check_log(view)
+    # Call recursively until view is done loading
     check_if_can_call(view)
+
+
+def check_log_view(view):
+    ext = getExtension(view.file_name())
+    # print(ext)
+    # Get pattern from settings or use default
+    err_regx = getSettingsRegex(ext)
+    # Go to next error
+    goToNextErrorView(view, err_regx)
 
 
 class log_crawl(sublime_plugin.TextCommand):
@@ -88,7 +88,6 @@ class side_bar_check_log(sublime_plugin.TextCommand):
 
     def run(self, view, files=[]):
         file = getPath(files)
-        #print("File is " + str(file))
         if file:
             # Open the file that was selected with the cursur
             window = self.view.window()
@@ -100,8 +99,77 @@ class side_bar_check_log(sublime_plugin.TextCommand):
 
 # Still need TODO:
 class side_bar_check_folder_logs(sublime_plugin.TextCommand):
-    def run(self, view, files=[]):
-        # Get pattern from settings or use default
-        err_regx = getSettingsRegex()
-        # Go to next error
-        goToNextError(self.view, err_regx)
+
+    def findIssueInLine(self, line, regex, current=0, max=0):
+        # Find next error/message in log
+        is_issue = re.search(r'%s' % regex, line, re.IGNORECASE)
+        if is_issue:
+            # If issue is found then add it to the array of issues for the file
+            sublime.status_message("Checking File " + str(current) + " of " + str(max))
+            return True
+        else:
+            return False
+
+    def createReport(self, found_files=[], found_lines={}, path=""):
+        # Now we build the bulky string before we create a new view and add the region
+        report = "LOG REPORT \n" + "    Folder: " + path + "\n"
+        if len(found_lines) > 0:
+            # Now we show issues for each file that is of importance
+            for file in found_files:
+                report += "\nISSUES FOR FILE: " + str(file) + "\n"
+                for line in found_lines[file]:
+                    report += line + "\n"
+        else:
+            report += "\nResult: NO ISSUES FOUND!"
+
+        # Now let's display the report in a view
+        newView = sublime.active_window().new_file()
+        newView.run_command("insert", {"characters": report})
+
+    def run(self, view, **args):
+        # Get dirs and files from args
+        dirs = args["dirs"]
+        files = args["files"]
+        # List for storing all file names with issues
+        found_files = []
+        # Dict for storing associations with satisfied lines and files
+        found_lines = {}
+        # Stores the folder path of the files
+        if len(dirs) > 0:
+            path = dirs[0]
+        else:
+            path = os.path.dirname(files[0])
+
+        # Counter to count the current position of the loop
+        current = 0
+        # Counter to hold the top value of the range for files found
+        max = len(files)
+
+        # Loop through files to check each file's lines
+        for file in os.listdir(path):
+            # Store file extension
+            extension = getExtension(file)
+            if extension == ".log":
+                # Open the file in current iteration
+                with open(path + "/" + file) as fp:
+                    # We need to keep track of the lines that are issues in this file
+                    issueLines = []
+                    # Check every line in the opened file
+                    for line in fp:
+                        regex = getSettingsRegex(extension)
+                        current = current + 1
+                        # Check if line satisfies the regex pattern stored in settings
+                        issueLine = self.findIssueInLine(line, regex, current, max)
+                        # If an issue is found then store the line in an array
+                        if issueLine:
+                            if file not in found_files:
+                                found_files.append(file)
+                            # Add the line and associate it with its parent file
+                            issueLines.append(line)
+                        else:
+                            continue
+                if len(issueLines) > 0:
+                    found_lines[file] = issueLines
+            else:
+                continue
+        self.createReport(found_files, found_lines, path)
