@@ -10,7 +10,7 @@ ignore_pattern = "Unable to copy SASUSER registry|the BASE SAS Software product 
 default_lst_pattern = "The COMPARE Procedure|No unequal values|not found in"
 
 
-def getSettingsRegex(extension):
+def get_settings_regex(extension):
     if extension == ".log" or extension == ".lst":
         s = sublime.load_settings('SAS_Log_Crawler.sublime-settings')
 
@@ -28,7 +28,7 @@ def getSettingsRegex(extension):
         return False
 
 
-def goToNextErrorView(theView, err_regx):
+def go_to_next_error_view(theView, err_regx):
     if err_regx:
         # Get end of last cursur position
         curr_pos = 0
@@ -49,13 +49,9 @@ def goToNextErrorView(theView, err_regx):
         sublime.status_message("This is not a .log or .lst file")
 
 
-def getExtension(filename):
+def get_extension(filename):
     path = os.path.splitext(filename)[1]
     return path
-
-
-def getPath(paths=[]):
-    return paths[0]
 
 
 def check_if_can_call(view):
@@ -70,12 +66,12 @@ def check_if_can_call(view):
 
 
 def check_log_view(view):
-    ext = getExtension(view.file_name())
+    ext = get_extension(view.file_name())
     # print(ext)
     # Get pattern from settings or use default
-    err_regx = getSettingsRegex(ext)
+    err_regx = get_settings_regex(ext)
     # Go to next error
-    goToNextErrorView(view, err_regx)
+    go_to_next_error_view(view, err_regx)
 
 
 class log_crawl(sublime_plugin.TextCommand):
@@ -87,7 +83,7 @@ class log_crawl(sublime_plugin.TextCommand):
 class side_bar_check_log(sublime_plugin.TextCommand):
 
     def run(self, view, files=[]):
-        file = getPath(files)
+        file = paths[0]
         if file:
             # Open the file that was selected with the cursur
             window = self.view.window()
@@ -100,7 +96,7 @@ class side_bar_check_log(sublime_plugin.TextCommand):
 # Still need TODO:
 class side_bar_check_folder_logs(sublime_plugin.TextCommand):
 
-    def findIssueInLine(self, line, regex, current=0, max=0):
+    def find_issue_in_line(self, line, regex, current=0, max=0):
         # Find next error/message in log
         is_issue = re.search(r'%s' % regex, line, re.IGNORECASE)
         if is_issue:
@@ -110,9 +106,9 @@ class side_bar_check_folder_logs(sublime_plugin.TextCommand):
         else:
             return False
 
-    def createReport(self, found_files=[], found_lines={}, path=""):
+    def create_report(self, found_files=[], found_lines={}, path=""):
         # Now we build the bulky string before we create a new view and add the region
-        report = "LOG REPORT \n" + "    Folder: " + path + "\n"
+        report = "LOG REPORT \n" + "Folder: " + path + "\n"
         if len(found_lines) > 0:
             # Now we show issues for each file that is of importance
             for file in found_files:
@@ -124,7 +120,12 @@ class side_bar_check_folder_logs(sublime_plugin.TextCommand):
 
         # Now let's display the report in a view
         newView = sublime.active_window().new_file()
+        newView.set_name("LOG REPORT.log")
         newView.run_command("insert", {"characters": report})
+        # Trying to add scope to the new file to ensure colour coding
+        # p1 = 0
+        # p2 = newView.size()
+        # newView.add_regions('log_report', [sublime.Region(p2, p1)], 'source.SASLog')
 
     def run(self, view, **args):
         # Get dirs and files from args
@@ -148,7 +149,7 @@ class side_bar_check_folder_logs(sublime_plugin.TextCommand):
         # Loop through files to check each file's lines
         for file in os.listdir(path):
             # Store file extension
-            extension = getExtension(file)
+            extension = get_extension(file)
             if extension == ".log":
                 # Open the file in current iteration
                 with open(path + "/" + file) as fp:
@@ -156,10 +157,10 @@ class side_bar_check_folder_logs(sublime_plugin.TextCommand):
                     issueLines = []
                     # Check every line in the opened file
                     for line in fp:
-                        regex = getSettingsRegex(extension)
+                        regex = get_settings_regex(extension)
                         current = current + 1
                         # Check if line satisfies the regex pattern stored in settings
-                        issueLine = self.findIssueInLine(line, regex, current, max)
+                        issueLine = self.find_issue_in_line(line, regex, current, max)
                         # If an issue is found then store the line in an array
                         if issueLine:
                             if file not in found_files:
@@ -172,4 +173,4 @@ class side_bar_check_folder_logs(sublime_plugin.TextCommand):
                     found_lines[file] = issueLines
             else:
                 continue
-        self.createReport(found_files, found_lines, path)
+        self.create_report(found_files, found_lines, path)
