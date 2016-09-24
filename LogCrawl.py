@@ -123,9 +123,10 @@ class side_bar_check_folder_logs(sublime_plugin.TextCommand):
         newView.set_name("LOG REPORT.log")
         newView.run_command("insert", {"characters": report})
         # Trying to add scope to the new file to ensure colour coding
-        # p1 = 0
-        # p2 = newView.size()
-        # newView.add_regions('log_report', [sublime.Region(p2, p1)], 'source.SASLog')
+        p1 = 0
+        p2 = newView.size()
+        newView.set_syntax_file("TempLogSyntax.tmLanguage")
+        # newView.add_regions('log_report', [sublime.Region(p2, p1)], 'source.SASLog', 'dot', sublime.HIDDEN)
 
     def run(self, view, **args):
         # Get dirs and files from args
