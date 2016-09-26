@@ -50,9 +50,11 @@ def go_to_next_error_view(theView, err_regx):
 
 
 def get_extension(filename):
-    path = os.path.splitext(filename)[1]
+    if filename != None:
+        path = os.path.splitext(filename)[1]
+    else:
+        path = None
     return path
-
 
 def check_if_can_call(view):
     # Set small asyncronous timeout while view is loading
