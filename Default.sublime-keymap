@@ -1,0 +1,3 @@
+[
+   { "keys": ["alt+e"], "command": "log_crawl" }
+]

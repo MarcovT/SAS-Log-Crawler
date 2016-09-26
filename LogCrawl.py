@@ -3,7 +3,7 @@ import sublime_plugin
 import re
 import os
 
-default_pattern = "missing val|repeats of BY values|uninitialized|[^l]remerge|Invalid data for"
+default_pattern = "will be overwritten by data set|Missing values were generated|repeats of BY values|uninitialized|[^l]remerge|Invalid data for"
 
 ignore_pattern = "Unable to copy SASUSER registry|the BASE SAS Software product with which|your system is scheduled|will be expiring soon, and|this upcoming expiration.|information on your warning period.|Unable to open SASUSER.PROFILE|All profile changes will be lost|Copyright (c)|This session is executing|The Base Product product"
 
@@ -17,11 +17,11 @@ def get_settings_regex(extension):
         if extension == ".log":
             def_regx = s.get('err-regx', default_pattern)
             ign_regx = s.get('ign-regx', ignore_pattern)
-            regex = "(^(error|warning:)|" + default_pattern + ")(?! (" + ignore_pattern + "))"
+            regex = "(^(error|warning:)|" + def_regx + ")(?! (" + ign_regx + "))"
         elif extension == "lst":
             def_regx = s.get('lst-regx', default_pattern)
             s.set('lst-regx', def_regx)
-            regex = "(" + default_pattern + ")"
+            regex = "(" + def_regx + ")"
 
         return regex
     else:
@@ -60,7 +60,7 @@ def check_if_can_call(view):
         sublime.set_timeout_async(check_if_can_call, 0.1)
     else:
         # When view is done loading call the log check function to jump to first issue if any is found
-        check_log(view)
+        check_log_view(view)
     # Call recursively until view is done loading
     check_if_can_call(view)
 
@@ -76,7 +76,7 @@ def check_log_view(view):
 
 class log_crawl(sublime_plugin.TextCommand):
     def run(self, edit):
-        check_log(self.view)
+        check_log_view(self.view)
 
 
 # Still need TODO:
