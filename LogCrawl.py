@@ -98,6 +98,8 @@ def create_report(found_files=[], found_lines={}, path=""):
     sublime.status_message("Creating Report ...")
     # Now we build the bulky string before we create a new view and add the region
     report = "LOG REPORT \n" + "Folder: " + path + "\n"
+    report += "Number of issues found: " + str(sum(len(v) for v in found_lines.values())) + "\n"
+    report += "Number of files with issue: " + str(len(found_files)) + "\n"
     if len(found_lines) > 0:
         # Now we show issues for each file that is of importance
         for file in found_files:
@@ -196,14 +198,7 @@ class folderLogThread (threading.Thread):
 
 class log_crawl(sublime_plugin.TextCommand):
     def run(self, edit):
-        file = paths[0]
-        if file:
-            # Open the file that was selected with the cursur
-            window = self.view.window()
-            view = window.open_file(os.path.realpath(file))
-            check_if_can_call(view)
-        else:
-            sublime.status_message("No file selected.")
+        check_log_view(self.view)
 
 
 class side_bar_check_log(sublime_plugin.TextCommand):
