@@ -8,6 +8,7 @@
         "id": "side-bar-check-log",
         "command": "side_bar_check_log",
         "args": {
+            "dirs": [],
             "files": [],
             "extensions":"log|lst"
         }
@@ -18,7 +19,8 @@
         "command": "side_bar_check_folder_logs",
         "args": {
             "dirs": [],
-            "files": []
+            "files": [],
+            "extensions":"log|lst"
         }
     }
 ]
